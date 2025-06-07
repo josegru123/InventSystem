@@ -36,7 +36,6 @@ Crear las migraciones para las aplicaciones users y api:
 ```bash
 python manage.py makemigrations users
 python manage.py makemigrations api
-python manage.py makemigrations
 ```
 
 Aplicar las migraciones a la base de datos:
