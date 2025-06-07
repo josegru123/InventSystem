@@ -1,0 +1,242 @@
+{% extends 'dashboard.html' %}
+
+{% block dashboard_title %}Gestión de Productos{% endblock %}
+
+{% block dashboard_content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Productos</h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalProducto">
+            <i class="bi bi-plus"></i> Nuevo Producto
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Categoría</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="productosTableBody">
+                    <!-- Los datos se cargarán dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Producto -->
+<div class="modal fade" id="modalProducto" tabindex="-1" aria-labelledby="modalProductoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalProductoLabel">Nuevo Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formProducto">
+                    <input type="hidden" id="productoId">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="precio" class="form-label">Precio</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" step="0.01" min="0" class="form-control" id="precio" name="precio" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label">Categoría</label>
+                        <select class="form-select" id="categoria" name="categoria" required>
+                            <option value="">Seleccione una categoría</option>
+                            <option value="Electrónica">Electrónica</option>
+                            <option value="Ropa">Ropa</option>
+                            <option value="Hogar">Hogar</option>
+                            <option value="Alimentos">Alimentos</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarProducto">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar la lista de productos al iniciar
+        cargarProductos();
+        
+        // Configurar botón de guardar producto
+        document.getElementById('btnGuardarProducto').addEventListener('click', guardarProducto);
+        
+        // Limpiar formulario cuando se abre el modal para nuevo producto
+        document.querySelector('[data-bs-target="#modalProducto"]').addEventListener('click', function() {
+            document.getElementById('formProducto').reset();
+            document.getElementById('productoId').value = '';
+            document.getElementById('modalProductoLabel').textContent = 'Nuevo Producto';
+        });
+    });
+    
+    // Función para cargar la lista de productos
+    function cargarProductos() {
+        fetch('/api/productos/')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('productosTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay productos registrados</td></tr>';
+                    return;
+                }
+                
+                data.forEach(producto => {
+                    const row = `
+                        <tr>
+                            <td>${producto.nombre}</td>
+                            <td>${producto.descripcion ? producto.descripcion.substring(0, 50) + (producto.descripcion.length > 50 ? '...' : '') : ''}</td>
+                            <td>$${parseFloat(producto.precio).toFixed(2)}</td>
+                            <td>${producto.categoria}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editarProducto(${producto.id})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarProducto(${producto.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar productos:', error);
+                alert('Error al cargar la lista de productos');
+            });
+    }
+    
+    // Función para guardar (crear o actualizar) un producto
+    function guardarProducto() {
+        const productoId = document.getElementById('productoId').value;
+        const nombre = document.getElementById('nombre').value;
+        const descripcion = document.getElementById('descripcion').value;
+        const precio = document.getElementById('precio').value;
+        const categoria = document.getElementById('categoria').value;
+        
+        // Validación básica
+        if (!nombre || !precio || !categoria) {
+            alert('Nombre, precio y categoría son campos requeridos');
+            return;
+        }
+        
+        const productoData = {
+            nombre,
+            descripcion,
+            precio,
+            categoria
+        };
+        
+        const url = productoId ? `/api/productos/${productoId}/` : '/api/productos/';
+        const method = productoId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(productoData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la solicitud');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Cerrar modal y recargar lista
+            const modalElement = document.getElementById('modalProducto');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            modal.hide();
+            
+            cargarProductos();
+            
+            // Mostrar mensaje de éxito
+            alert(productoId ? 'Producto actualizado con éxito' : 'Producto creado con éxito');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al guardar el producto');
+        });
+    }
+    
+    // Función para cargar datos de un producto para edición
+    function editarProducto(id) {
+        fetch(`/api/productos/${id}/`)
+            .then(response => response.json())
+            .then(producto => {
+                // Llenar el formulario con los datos del producto
+                document.getElementById('productoId').value = producto.id;
+                document.getElementById('nombre').value = producto.nombre;
+                document.getElementById('descripcion').value = producto.descripcion || '';
+                document.getElementById('precio').value = producto.precio;
+                document.getElementById('categoria').value = producto.categoria;
+                
+                // Cambiar título del modal
+                document.getElementById('modalProductoLabel').textContent = 'Editar Producto';
+                
+                // Abrir el modal
+                const modalElement = document.getElementById('modalProducto');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error al cargar producto:', error);
+                alert('Error al cargar los datos del producto');
+            });
+    }
+    
+    // Función para eliminar un producto
+    function eliminarProducto(id) {
+        if (confirm('¿Está seguro de que desea eliminar este producto?')) {
+            fetch(`/api/productos/${id}/`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al eliminar');
+                }
+                
+                // Recargar lista de productos
+                cargarProductos();
+                
+                // Mostrar mensaje de éxito
+                alert('Producto eliminado con éxito');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el producto');
+            });
+        }
+    }
+</script>
+{% endblock %}

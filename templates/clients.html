@@ -1,0 +1,232 @@
+{% extends 'dashboard.html' %}
+
+{% block dashboard_title %}Gestión de Clientes{% endblock %}
+
+{% block dashboard_content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Clientes</h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCliente">
+            <i class="bi bi-plus"></i> Nuevo Cliente
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Dirección</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="clientesTableBody">
+                    <!-- Los datos se cargarán dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear/Editar Cliente -->
+<div class="modal fade" id="modalCliente" tabindex="-1" aria-labelledby="modalClienteLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalClienteLabel">Nuevo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCliente">
+                    <input type="hidden" id="clienteId">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono">
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <textarea class="form-control" id="direccion" name="direccion" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarCliente">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar la lista de clientes al iniciar
+        cargarClientes();
+        
+        // Configurar botón de guardar cliente
+        document.getElementById('btnGuardarCliente').addEventListener('click', guardarCliente);
+        
+        // Limpiar formulario cuando se abre el modal para nuevo cliente
+        document.querySelector('[data-bs-target="#modalCliente"]').addEventListener('click', function() {
+            document.getElementById('formCliente').reset();
+            document.getElementById('clienteId').value = '';
+            document.getElementById('modalClienteLabel').textContent = 'Nuevo Cliente';
+        });
+    });
+    
+    // Función para cargar la lista de clientes
+    function cargarClientes() {
+        fetch('/api/clientes/')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('clientesTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay clientes registrados</td></tr>';
+                    return;
+                }
+                
+                data.forEach(cliente => {
+                    const row = `
+                        <tr>
+                            <td>${cliente.nombre}</td>
+                            <td>${cliente.email}</td>
+                            <td>${cliente.telefono || ''}</td>
+                            <td>${cliente.direccion || ''}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editarCliente(${cliente.id})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarCliente(${cliente.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar clientes:', error);
+                alert('Error al cargar la lista de clientes');
+            });
+    }
+    
+    // Función para guardar (crear o actualizar) un cliente
+    function guardarCliente() {
+        const clienteId = document.getElementById('clienteId').value;
+        const nombre = document.getElementById('nombre').value;
+        const email = document.getElementById('email').value;
+        const telefono = document.getElementById('telefono').value;
+        const direccion = document.getElementById('direccion').value;
+        
+        // Validación básica
+        if (!nombre || !email) {
+            alert('Nombre y email son campos requeridos');
+            return;
+        }
+        
+        const clienteData = {
+            nombre,
+            email,
+            telefono,
+            direccion
+        };
+        
+        const url = clienteId ? `/api/clientes/${clienteId}/` : '/api/clientes/';
+        const method = clienteId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(clienteData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la solicitud');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Cerrar modal y recargar lista
+            const modalElement = document.getElementById('modalCliente');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            modal.hide();
+            
+            cargarClientes();
+            
+            // Mostrar mensaje de éxito
+            alert(clienteId ? 'Cliente actualizado con éxito' : 'Cliente creado con éxito');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al guardar el cliente');
+        });
+    }
+    
+    // Función para cargar datos de un cliente para edición
+    function editarCliente(id) {
+        fetch(`/api/clientes/${id}/`)
+            .then(response => response.json())
+            .then(cliente => {
+                // Llenar el formulario con los datos del cliente
+                document.getElementById('clienteId').value = cliente.id;
+                document.getElementById('nombre').value = cliente.nombre;
+                document.getElementById('email').value = cliente.email;
+                document.getElementById('telefono').value = cliente.telefono || '';
+                document.getElementById('direccion').value = cliente.direccion || '';
+                
+                // Cambiar título del modal
+                document.getElementById('modalClienteLabel').textContent = 'Editar Cliente';
+                
+                // Abrir el modal
+                const modalElement = document.getElementById('modalCliente');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error al cargar cliente:', error);
+                alert('Error al cargar los datos del cliente');
+            });
+    }
+    
+    // Función para eliminar un cliente
+    function eliminarCliente(id) {
+        if (confirm('¿Está seguro de que desea eliminar este cliente?')) {
+            fetch(`/api/clientes/${id}/`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al eliminar');
+                }
+                
+                // Recargar lista de clientes
+                cargarClientes();
+                
+                // Mostrar mensaje de éxito
+                alert('Cliente eliminado con éxito');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el cliente');
+            });
+        }
+    }
+</script>
+{% endblock %}

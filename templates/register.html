@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registro | Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4 p-sm-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus text-primary" style="font-size: 3rem;"></i>
+                        <h2 class="fw-bold mt-3">Crear cuenta</h2>
+                        <p class="text-muted">Regístrate para acceder al sistema</p>
+                    </div>
+
+                    <div id="registerAlert" class="alert d-none" role="alert"></div>
+
+                    <form id="registerForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">Confirmar contraseña</label>
+                            <input type="password" class="form-control" id="password2" name="password2" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Registrarse</button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p>¿Ya tienes una cuenta? <a href="{% url 'login' %}" class="text-decoration-none">Inicia sesión</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const password2 = document.getElementById('password2').value;
+        
+        // Validación del lado del cliente
+        if (password !== password2) {
+            showAlert('Las contraseñas no coinciden', 'danger');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/register/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken') 
+                },
+                credentials: 'include',
+                body: JSON.stringify({ 
+                    username, 
+                    email, 
+                    password
+                }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Guardar información del usuario en sessionStorage
+                if (data.user) {
+                    sessionStorage.setItem('userInfo', JSON.stringify({
+                        username: data.user.username,
+                        email: data.user.email
+                    }));
+                }
+                
+                // Mostrar mensaje de éxito
+                showAlert('Registro exitoso! Redirigiendo al dashboard...', 'success');
+                
+                // Redireccionar al dashboard después de un breve retraso
+                setTimeout(() => {
+                    window.location.href = '{% url "dashboard" %}';
+                }, 1500);
+            } else {
+                // El resto del código permanece igual
+                let errorMessage = 'Error en el registro:<br>';
+                
+                if (typeof data === 'object' && data !== null) {
+                    Object.keys(data).forEach(key => {
+                        if (Array.isArray(data[key])) {
+                            errorMessage += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${data[key].join(' ')}<br>`;
+                        } else if (typeof data[key] === 'string') {
+                            errorMessage += `${key.charAt(0).toUpperCase() + key.slice(1)}: ${data[key]}<br>`;
+                        }
+                    });
+                } else {
+                    errorMessage = data || 'Error desconocido';
+                }
+                
+                showAlert(errorMessage, 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('Error de conexión. Por favor, inténtalo de nuevo.', 'danger');
+        }
+    });
+    
+    // Las funciones auxiliares permanecen iguales
+    function showAlert(message, type) {
+        const alertElement = document.getElementById('registerAlert');
+        alertElement.innerHTML = message;
+        alertElement.classList.remove('d-none', 'alert-success', 'alert-danger');
+        alertElement.classList.add('alert-' + type);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

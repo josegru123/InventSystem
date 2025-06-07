@@ -1,0 +1,271 @@
+{% extends 'dashboard.html' %}
+
+{% block dashboard_title %}Gestión de Inventario{% endblock %}
+
+{% block dashboard_content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Control de Inventario</h5>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInventario">
+            <i class="bi bi-plus"></i> Añadir Stock
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Stock Actual</th>
+                        <th>Fecha de Ingreso</th>
+                        <th>Observaciones</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="inventarioTableBody">
+                    <!-- Los datos se cargarán dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Añadir/Editar Stock -->
+<div class="modal fade" id="modalInventario" tabindex="-1" aria-labelledby="modalInventarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalInventarioLabel">Añadir Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formInventario">
+                    <input type="hidden" id="inventarioId">
+                    <div class="mb-3">
+                        <label for="producto" class="form-label">Producto</label>
+                        <select class="form-select" id="producto" name="producto" required>
+                            <option value="">Seleccione un producto</option>
+                            <!-- Aquí se cargarán los productos desde el backend -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="cantidad" class="form-label">Cantidad</label>
+                        <input type="number" min="1" class="form-control" id="cantidad" name="cantidad" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_ingreso" class="form-label">Fecha de Ingreso</label>
+                        <input type="date" class="form-control" id="fecha_ingreso" name="fecha_ingreso" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarInventario">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar la lista de inventario al iniciar
+        cargarInventario();
+        
+        // Cargar productos para el select
+        cargarProductosSelect();
+        
+        // Configurar botón de guardar inventario
+        document.getElementById('btnGuardarInventario').addEventListener('click', guardarInventario);
+        
+        // Limpiar formulario y establecer fecha actual cuando se abre el modal
+        document.querySelector('[data-bs-target="#modalInventario"]').addEventListener('click', function() {
+            document.getElementById('formInventario').reset();
+            document.getElementById('inventarioId').value = '';
+            document.getElementById('modalInventarioLabel').textContent = 'Añadir Stock';
+            
+            // Establecer fecha actual
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha_ingreso').value = today;
+        });
+    });
+    
+    // Función para cargar la lista de inventario
+    function cargarInventario() {
+        fetch('/api/inventario/')
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('inventarioTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay registros de inventario</td></tr>';
+                    return;
+                }
+                
+                data.forEach(item => {
+                    const fechaFormateada = new Date(item.fecha_ingreso).toLocaleDateString();
+                    const row = `
+                        <tr>
+                            <td>${item.producto_nombre}</td>
+                            <td>${item.cantidad}</td>
+                            <td>${fechaFormateada}</td>
+                            <td>${item.observaciones || '-'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editarInventario(${item.id})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="eliminarInventario(${item.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar inventario:', error);
+                alert('Error al cargar los registros de inventario');
+            });
+    }
+    
+    // Función para cargar productos en el select
+    function cargarProductosSelect() {
+        fetch('/api/productos/')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('producto');
+                // Mantener solo la opción por defecto
+                select.innerHTML = '<option value="">Seleccione un producto</option>';
+                
+                // Agregar cada producto como opción
+                data.forEach(producto => {
+                    const option = document.createElement('option');
+                    option.value = producto.id;
+                    option.textContent = producto.nombre;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar productos:', error);
+                alert('Error al cargar la lista de productos');
+            });
+    }
+    
+    // Función para guardar (crear o actualizar) un registro de inventario
+    function guardarInventario() {
+        const inventarioId = document.getElementById('inventarioId').value;
+        const producto = document.getElementById('producto').value;
+        const cantidad = document.getElementById('cantidad').value;
+        const fecha_ingreso = document.getElementById('fecha_ingreso').value;
+        const observaciones = document.getElementById('observaciones').value;
+        
+        // Validación básica
+        if (!producto || !cantidad || !fecha_ingreso) {
+            alert('Producto, cantidad y fecha de ingreso son campos requeridos');
+            return;
+        }
+        
+        const inventarioData = {
+            producto,
+            cantidad,
+            fecha_ingreso,
+            observaciones
+        };
+        
+        const url = inventarioId ? `/api/inventario/${inventarioId}/` : '/api/inventario/';
+        const method = inventarioId ? 'PUT' : 'POST';
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(inventarioData)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la solicitud');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Cerrar modal y recargar lista
+            const modalElement = document.getElementById('modalInventario');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            modal.hide();
+            
+            cargarInventario();
+            
+            // Mostrar mensaje de éxito
+            alert(inventarioId ? 'Registro actualizado con éxito' : 'Stock añadido con éxito');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al guardar el registro de inventario');
+        });
+    }
+    
+    // Función para cargar datos de un registro para edición
+    function editarInventario(id) {
+        fetch(`/api/inventario/${id}/`)
+            .then(response => response.json())
+            .then(item => {
+                // Llenar el formulario con los datos del registro
+                document.getElementById('inventarioId').value = item.id;
+                document.getElementById('producto').value = item.producto;
+                document.getElementById('cantidad').value = item.cantidad;
+                
+                // Formatear la fecha para el input date (YYYY-MM-DD)
+                const fecha = new Date(item.fecha_ingreso);
+                const fechaFormateada = fecha.toISOString().split('T')[0];
+                document.getElementById('fecha_ingreso').value = fechaFormateada;
+                
+                document.getElementById('observaciones').value = item.observaciones || '';
+                
+                // Cambiar título del modal
+                document.getElementById('modalInventarioLabel').textContent = 'Editar Registro';
+                
+                // Abrir el modal
+                const modalElement = document.getElementById('modalInventario');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            })
+            .catch(error => {
+                console.error('Error al cargar registro:', error);
+                alert('Error al cargar los datos del registro');
+            });
+    }
+    
+    // Función para eliminar un registro
+    function eliminarInventario(id) {
+        if (confirm('¿Está seguro de que desea eliminar este registro?')) {
+            fetch(`/api/inventario/${id}/`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al eliminar');
+                }
+                
+                // Recargar lista de inventario
+                cargarInventario();
+                
+                // Mostrar mensaje de éxito
+                alert('Registro eliminado con éxito');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el registro');
+            });
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión | Sistema de Inventario{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-container {
+        max-width: 450px;
+        margin: 0 auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4 p-sm-5">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-box-seam text-primary" style="font-size: 3rem;"></i>
+                        <h2 class="fw-bold mt-3">InventSystem</h2>
+                        <p class="text-muted">Iniciar sesión</p>
+                    </div>
+
+                    <div id="loginAlert" class="alert alert-danger d-none" role="alert">
+                        Credenciales inválidas. Por favor, inténtalo de nuevo.
+                    </div>
+
+                    <form id="loginForm">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Recordarme</label>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Iniciar Sesión</button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <p>¿No tienes una cuenta? <a href="{% url 'register' %}" class="text-decoration-none">Regístrate</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const response = await fetch('/api/token/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                credentials: 'include',  // Importante para recibir/enviar cookies
+                body: JSON.stringify({ email, password }),
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Almacenar información básica del usuario (no tokens)
+                // El token ya está en las cookies HTTP-Only
+                if (data.user) {
+                    sessionStorage.setItem('userInfo', JSON.stringify({
+                        email: data.user.email,
+                        username: data.user.username
+                    }));
+                }
+                
+                // Redireccionar inmediatamente al dashboard
+                window.location.href = '{% url "dashboard" %}';
+            } else {
+                // Mostrar mensaje de error
+                showAlert('Credenciales inválidas. Por favor, inténtalo de nuevo.', 'danger');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert(`Error de conexión: ${error.message}`, 'danger')
+        }
+    });
+    
+    function showAlert(message, type) {
+        const alertElement = document.getElementById('loginAlert');
+        alertElement.innerHTML = message;
+        alertElement.classList.remove('d-none', 'alert-success', 'alert-danger');
+        alertElement.classList.add('alert-' + type);
+    }
+    
+    // Función para obtener cookies (útil para CSRF)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

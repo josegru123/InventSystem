@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Gestión de Inventarios{% endblock %}</title>
+    {% load static %}
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Iconos de Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <main>
+        {% block content %}
+        <!-- El contenido específico de cada página irá aquí -->
+        {% endblock %}
+    </main>
+    
+    <footer>
+    </footer>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="{% static 'js/main.js' %}"></script>
+
+
+<script>
+    // Verificar autenticación mediante comprobación de cookies
+    document.addEventListener('DOMContentLoaded', function() {
+        const isAuthRequired = document.body.hasAttribute('data-auth-required');
+    
+        updateUI();
+    });
+    
+    function updateUI() {
+        const authLinks = document.getElementById('auth-links');
+        
+        if (authLinks) {
+            if (authLinks.hasAttribute('data-authenticated')) {
+                const username = authLinks.getAttribute('data-username');
+                const isAdmin = authLinks.getAttribute('data-admin') === 'true';
+                
+                authLinks.innerHTML = `
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> ${username}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            ${isAdmin ? '<li><a class="dropdown-item" href="/users/">Gestionar Usuarios</a></li>' : ''}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" id="logout-btn">Cerrar sesión</a></li>
+                        </ul>
+                    </li>
+                `;
+                
+                document.getElementById('logout-btn').addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    
+                    try {
+                        await fetch('/api/logout/', { 
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    } catch (error) {
+                        console.error('Error durante el logout:', error);
+                    }
+                    
+                    window.location.href = '/login/';
+                });
+            } else {
+                authLinks.innerHTML = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login/">Iniciar sesión</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register/">Registrarse</a>
+                    </li>
+                `;
+            }
+        }
+    }
+</script>
+    {% block extra_js %}
+    <!-- Scripts adicionales por página -->
+    {% endblock %}
+</body>
+</html>

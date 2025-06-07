@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Sistema de Inventario{% endblock %}
+
+{% block content %}
+
+<header class="navbar position-fixed w-100 top-0 bg-transparent shadow-none py-2 px-3" style="z-index: 99;">
+    <div class="d-flex justify-content-between align-items-center w-100">
+        <div class="d-flex align-items-center">
+        </div>
+        <div class="navbar-nav">
+            <div class="nav-item text-nowrap d-flex align-items-center">
+                <span class="text-dark me-2">Bienvenido, <span id="username">{{ request.user.username }}</span></span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <!-- Sidebar con logo en la parte superior -->
+        <nav id="sidebar" class="bg-dark position-fixed h-100 overflow-hidden" style="width: 240px; z-index: 100;">
+            <!-- Logo/Nombre en la parte superior del sidebar -->
+            <div class="bg-primary text-white py-3 px-3">
+                <div class="text-decoration-none text-white d-flex align-items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-seam me-2" viewBox="0 0 16 16">
+                        <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                    </svg>
+                    <span class="fw-bold">InventSystem</span>
+                </div>
+            </div>
+            
+            <div class="position-relative mt-3 overflow-auto h-100 pb-5">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50" href="{% url 'dashboard' %}" style="position: relative;">
+                            <i class="bi bi-house me-2 text-center" style="width: 20px;"></i>
+                            <span>Inicio</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50" href="{% url 'clientes' %}" style="position: relative;">
+                            <i class="bi bi-people me-2 text-center" style="width: 20px;"></i>
+                            <span>Clientes</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50" href="{% url 'productos' %}" style="position: relative;">
+                            <i class="bi bi-box-seam me-2 text-center" style="width: 20px;"></i>
+                            <span>Productos</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50" href="{% url 'inventario' %}" style="position: relative;">
+                            <i class="bi bi-clipboard-data me-2 text-center" style="width: 20px;"></i>
+                            <span>Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mt-5">
+                        <a class="nav-link text-danger logout-link" href="javascript:void(0);" id="logoutBtn">
+                            <i class="bi bi-box-arrow-right me-2 text-center" style="width: 20px;"></i>
+                            <span>Cerrar sesión</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Contenido principal -->
+        <main id="mainContent" class="px-4 py-5" style="margin-left: 240px; min-height: 100vh; width: calc(100% - 240px); padding-top: 70px;">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                <h1 class="h2">{% block dashboard_title %}Dashboard{% endblock %}</h1>
+            </div>
+
+            {% block dashboard_content %}
+            <!-- Contenido del dashboard con datos dinámicos -->
+            <div class="row justify-content-center">
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card bg-primary text-white border-0 rounded-3 shadow h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-uppercase">Clientes</h6>
+                                    <h2 class="fw-bold mb-0">{{ clientes_count }}</h2>
+                                </div>
+                                <i class="bi bi-people-fill" style="font-size: 3rem; opacity: 0.4;"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between" style="background-color: rgba(0,0,0,0.1); border-top: none;">
+                            <a href="{% url 'clientes' %}" class="text-white text-decoration-none">Ver detalles</a>
+                            <i class="bi bi-arrow-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card bg-success text-white border-0 rounded-3 shadow h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-uppercase">Productos</h6>
+                                    <h2 class="fw-bold mb-0">{{ productos_count }}</h2>
+                                </div>
+                                <i class="bi bi-box-seam-fill" style="font-size: 3rem; opacity: 0.4;"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between" style="background-color: rgba(0,0,0,0.1); border-top: none;">
+                            <a href="{% url 'productos' %}" class="text-white text-decoration-none">Ver detalles</a>
+                            <i class="bi bi-arrow-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card bg-info text-white border-0 rounded-3 shadow h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-uppercase">Valor del Inventario</h6>
+                                    <h2 class="fw-bold mb-0">${{ valor_total|floatformat:2 }}</h2>
+                                </div>
+                                <i class="bi bi-cash-coin" style="font-size: 3rem; opacity: 0.4;"></i>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex align-items-center justify-content-between" style="background-color: rgba(0,0,0,0.1); border-top: none;">
+                            <a href="{% url 'inventario' %}" class="text-white text-decoration-none">Ver detalles</a>
+                            <i class="bi bi-arrow-right text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Actualizar nombre de usuario
+        const userInfo = JSON.parse(sessionStorage.getItem('userInfo') || '{}');
+        const usernameElement = document.getElementById('username');
+        
+        if (userInfo && userInfo.username && usernameElement) {
+            usernameElement.textContent = userInfo.username;
+        }
+        
+        // Manejar el cierre de sesión
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async function() {
+                try {
+                    // Llamar a la API de logout para eliminar las cookies HTTP-only
+                    const response = await fetch('/api/logout/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Error al cerrar sesión');
+                    }
+                    
+                    // Limpiar también el localStorage/sessionStorage por si acaso
+                    sessionStorage.removeItem('userInfo');
+                    localStorage.removeItem('userInfo');
+                    
+                    // Redireccionar a la página de inicio
+                    window.location.href = "{% url 'home' %}";
+                } catch (error) {
+                    console.error('Error durante el logout:', error);
+                    alert('Hubo un error al cerrar sesión. Por favor, inténtalo de nuevo.');
+                }
+            });
+        }
+                
+        // Agregar estilos de selección personalizados
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            .active-link {
+                color: #ffffff !important;
+                background-color: #1e2125 !important;
+                border-left: 4px solid #0d6efd;
+                padding-left: calc(1rem - 4px) !important;
+            }
+            .active-link i {
+                color: #0d6efd;
+            }
+            #sidebar .nav-link:hover:not(.logout-link) {
+                background-color: #2c3136;
+                color: #ffffff !important;
+            }
+            .logout-link:hover {
+                background-color: rgba(220, 53, 69, 0.1);
+                cursor: pointer;
+            }
+        `;
+        document.head.appendChild(styleElement);
+        
+        // Llamar a la función para resaltar el ítem activo
+        highlightActiveMenuItem();
+    });
+    
+    // Función para resaltar el elemento de menú actual
+    function highlightActiveMenuItem() {
+        const currentPath = window.location.pathname;
+        console.log("Ruta actual:", currentPath);
+        
+        const menuLinks = document.querySelectorAll('#sidebar .nav-link:not(.logout-link)');
+        
+        let foundActive = (currentPath === '/' || currentPath === '') ? true : false;
+        
+        // Recorrer todos los enlaces y comparar con la ruta actual
+        menuLinks.forEach(link => {
+            link.classList.remove('active-link');
+            
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            let cleanHref = href;
+            if (href.includes('://')) {
+                cleanHref = new URL(href).pathname;
+            }
+            
+            if (
+               
+                currentPath === cleanHref ||
+                (cleanHref.length > 1 && 
+                 cleanHref !== '/dashboard/' && 
+                 currentPath.startsWith(cleanHref)) ||
+                (cleanHref.includes('dashboard') && 
+                 (currentPath === '/' || currentPath === '/dashboard/'))
+            ) {
+                link.classList.add('active-link');
+                foundActive = true;
+            }
+        });
+        
+        // Si no encontramos ningún elemento activo y estamos en el dashboard, activar "Inicio"
+        if (!foundActive && (currentPath === '/' || currentPath === '/dashboard/')) {
+            const homeLink = document.querySelector('a[href*="dashboard"]');
+            if (homeLink) {
+                homeLink.classList.add('active-link');
+            }
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+migrations/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media
+
+# Archivos de entorno virtual
+venv/
+
+
+# Archivos de distribución / empaquetado
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Configuraciones locales
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos estáticos generados
+staticfiles/
+
+# Coverage
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+
+# Translations
+*.mo
+
+# VS Code
+.vscode/
+.history
+
+# PyCharm
+.idea/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
