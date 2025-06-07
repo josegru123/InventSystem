@@ -61,22 +61,6 @@ El servidor estará disponible en: http://127.0.0.1:8000/
 2. Completa el formulario con tus datos
 3. Inicia sesión con tu usuario y contraseña
 
-### Funcionalidades principales
-
-- **Gestión de inventario**: Agregar, editar y eliminar productos
-- **Control de stock**: Seguimiento de cantidades disponibles
-- **Generación de reportes**: Exportar datos en diferentes formatos
-
-## Contribuir
-
-Si deseas contribuir al proyecto, por favor:
-
-1. Haz un fork del repositorio
-2. Crea una rama para tu característica (`git checkout -b feature/nueva-caracteristica`)
-3. Realiza tus cambios y haz commit (`git commit -m 'Añadir nueva característica'`)
-4. Sube tus cambios (`git push origin feature/nueva-caracteristica`)
-5. Abre un Pull Request
-
 ## Licencia
 
 Este proyecto está licenciado bajo [Licencia MIT](LICENSE).
